@@ -4,11 +4,13 @@ import path from 'path';
 import {
   ASSISTANT_NAME,
   CREDENTIAL_PROXY_PORT,
+  EXECUTION_MODE,
   IDLE_TIMEOUT,
   POLL_INTERVAL,
   TIMEZONE,
   TRIGGER_PATTERN,
 } from './config.js';
+import { runDirectAgent } from './direct-runner.js';
 import { startCredentialProxy } from './credential-proxy.js';
 import './channels/index.js';
 import {
@@ -310,21 +312,29 @@ async function runAgent(
       }
     : undefined;
 
+  const containerInput = {
+    prompt,
+    sessionId,
+    groupFolder: group.folder,
+    chatJid,
+    isMain,
+    assistantName: ASSISTANT_NAME,
+  };
+
   try {
-    const output = await runContainerAgent(
-      group,
-      {
-        prompt,
-        sessionId,
-        groupFolder: group.folder,
-        chatJid,
-        isMain,
-        assistantName: ASSISTANT_NAME,
-      },
-      (proc, containerName) =>
-        queue.registerProcess(chatJid, proc, containerName, group.folder),
-      wrappedOnOutput,
-    );
+    let output: ContainerOutput;
+
+    if (EXECUTION_MODE === 'direct') {
+      output = await runDirectAgent(group, containerInput, wrappedOnOutput);
+    } else {
+      output = await runContainerAgent(
+        group,
+        containerInput,
+        (proc, containerName) =>
+          queue.registerProcess(chatJid, proc, containerName, group.folder),
+        wrappedOnOutput,
+      );
+    }
 
     if (output.newSessionId) {
       sessions[group.folder] = output.newSessionId;
@@ -334,7 +344,7 @@ async function runAgent(
     if (output.status === 'error') {
       logger.error(
         { group: group.name, error: output.error },
-        'Container agent error',
+        `${EXECUTION_MODE === 'direct' ? 'Direct' : 'Container'} agent error`,
       );
       return 'error';
     }
@@ -466,6 +476,10 @@ function recoverPendingMessages(): void {
 }
 
 function ensureContainerSystemRunning(): void {
+  if (EXECUTION_MODE === 'direct') {
+    logger.info('Direct execution mode — skipping container runtime checks');
+    return;
+  }
   ensureContainerRuntimeRunning();
   cleanupOrphans();
 }
@@ -477,16 +491,21 @@ async function main(): Promise<void> {
   loadState();
   restoreRemoteControl();
 
-  // Start credential proxy (containers route API calls through this)
-  const proxyServer = await startCredentialProxy(
-    CREDENTIAL_PROXY_PORT,
-    PROXY_BIND_HOST,
-  );
+  // Start credential proxy only in container mode (containers route API calls through this)
+  let proxyServer: { close(): void } | null = null;
+  if (EXECUTION_MODE !== 'direct') {
+    proxyServer = await startCredentialProxy(
+      CREDENTIAL_PROXY_PORT,
+      PROXY_BIND_HOST,
+    );
+  } else {
+    logger.info('Direct execution mode — skipping credential proxy');
+  }
 
   // Graceful shutdown handlers
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutdown signal received');
-    proxyServer.close();
+    proxyServer?.close();
     await queue.shutdown(10000);
     for (const ch of channels) await ch.disconnect();
     process.exit(0);
