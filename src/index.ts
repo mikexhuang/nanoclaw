@@ -62,6 +62,7 @@ import {
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
+import { startHealthMonitor, stopHealthMonitor } from './health-monitor.js';
 import { pacedSend } from './message-pacing.js';
 
 // Re-export for backwards compatibility during refactor
@@ -512,6 +513,7 @@ async function main(): Promise<void> {
   // Graceful shutdown handlers
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutdown signal received');
+    stopHealthMonitor();
     proxyServer?.close();
     await queue.shutdown(10000);
     for (const ch of channels) await ch.disconnect();
@@ -622,6 +624,13 @@ async function main(): Promise<void> {
     logger.fatal('No channels connected');
     process.exit(1);
   }
+
+  // Start health monitor with admin alerts to main group
+  const mainGroup = Object.entries(registeredGroups).find(
+    ([_, g]) => g.isMain,
+  );
+  const adminJid = mainGroup ? mainGroup[0] : null;
+  startHealthMonitor(channels, adminJid);
 
   // Start subsystems (independently of connection handler)
   startSchedulerLoop({

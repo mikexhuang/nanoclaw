@@ -5,7 +5,8 @@ node_modules/
 dist/
 
 # Local data & auth
-store/
+store/*
+!store/config/
 data/
 logs/
 
@@ -13,10 +14,15 @@ logs/
 groups/*
 !groups/main/
 !groups/global/
+!groups/whatsapp_family/
 groups/main/*
 groups/global/*
+groups/whatsapp_family/*
 !groups/main/CLAUDE.md
 !groups/global/CLAUDE.md
+!groups/whatsapp_family/CLAUDE.md
+!groups/whatsapp_family/profile.md
+!groups/whatsapp_family/notes.md
 
 # Secrets
 *.keys.json
