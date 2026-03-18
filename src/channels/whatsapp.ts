@@ -299,6 +299,19 @@ export class WhatsAppChannel implements Channel {
     }
   }
 
+  async sendReadReceipt(jid: string, messageIds: string[]): Promise<void> {
+    try {
+      const keys = messageIds.map((id) => ({
+        remoteJid: jid,
+        id,
+      }));
+      await this.sock.readMessages(keys);
+      logger.debug({ jid, count: messageIds.length }, 'Read receipts sent');
+    } catch (err) {
+      logger.debug({ jid, err }, 'Failed to send read receipts');
+    }
+  }
+
   async syncGroups(force: boolean): Promise<void> {
     return this.syncGroupMetadata(force);
   }
