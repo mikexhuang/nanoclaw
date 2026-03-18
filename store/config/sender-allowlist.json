@@ -1,0 +1,16 @@
+{
+  "default": {
+    "allow": "*",
+    "mode": "trigger"
+  },
+  "chats": {
+    "FAMILY_GROUP_JID_PLACEHOLDER": {
+      "allow": [
+        "PARENT1_PHONE@s.whatsapp.net",
+        "PARENT2_PHONE@s.whatsapp.net"
+      ],
+      "mode": "trigger"
+    }
+  },
+  "logDenied": true
+}
