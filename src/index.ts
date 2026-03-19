@@ -626,9 +626,7 @@ async function main(): Promise<void> {
   }
 
   // Start health monitor with admin alerts to main group
-  const mainGroup = Object.entries(registeredGroups).find(
-    ([_, g]) => g.isMain,
-  );
+  const mainGroup = Object.entries(registeredGroups).find(([_, g]) => g.isMain);
   const adminJid = mainGroup ? mainGroup[0] : null;
   startHealthMonitor(channels, adminJid);
 

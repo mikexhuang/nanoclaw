@@ -8,7 +8,9 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 
 // Mock group-folder to avoid filesystem requirements
 vi.mock('./group-folder.js', () => ({
-  resolveGroupFolderPath: vi.fn((folder: string) => `/tmp/test-groups/${folder}`),
+  resolveGroupFolderPath: vi.fn(
+    (folder: string) => `/tmp/test-groups/${folder}`,
+  ),
 }));
 
 // Mock logger
@@ -125,7 +127,10 @@ describe('direct-runner', () => {
     async function* emptyStream() {}
     mockQuery.mockReturnValue(emptyStream() as any);
 
-    const inputWithSession = { ...testInput, sessionId: 'existing-session-456' };
+    const inputWithSession = {
+      ...testInput,
+      sessionId: 'existing-session-456',
+    };
     await runDirectAgent(testGroup, inputWithSession);
 
     const callArgs = mockQuery.mock.calls[0][0];

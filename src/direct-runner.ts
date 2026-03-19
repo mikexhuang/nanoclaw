@@ -64,7 +64,14 @@ export async function runDirectAgent(
   }
 
   // MCP server for IPC tools
-  const mcpServerPath = path.join(__dirname, '..', 'container', 'agent-runner', 'dist', 'ipc-mcp-stdio.js');
+  const mcpServerPath = path.join(
+    __dirname,
+    '..',
+    'container',
+    'agent-runner',
+    'dist',
+    'ipc-mcp-stdio.js',
+  );
 
   let newSessionId: string | undefined;
   let resultCount = 0;
@@ -76,34 +83,51 @@ export async function runDirectAgent(
         cwd,
         resume: input.sessionId,
         systemPrompt: globalClaudeMd
-          ? { type: 'preset' as const, preset: 'claude_code' as const, append: globalClaudeMd }
+          ? {
+              type: 'preset' as const,
+              preset: 'claude_code' as const,
+              append: globalClaudeMd,
+            }
           : undefined,
         allowedTools: [
           'Bash',
-          'Read', 'Write', 'Edit', 'Glob', 'Grep',
-          'WebSearch', 'WebFetch',
-          'Task', 'TaskOutput', 'TaskStop',
-          'TeamCreate', 'TeamDelete', 'SendMessage',
-          'TodoWrite', 'ToolSearch', 'Skill',
+          'Read',
+          'Write',
+          'Edit',
+          'Glob',
+          'Grep',
+          'WebSearch',
+          'WebFetch',
+          'Task',
+          'TaskOutput',
+          'TaskStop',
+          'TeamCreate',
+          'TeamDelete',
+          'SendMessage',
+          'TodoWrite',
+          'ToolSearch',
+          'Skill',
           'NotebookEdit',
           ...(fs.existsSync(mcpServerPath) ? ['mcp__nanoclaw__*'] : []),
         ],
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
         settingSources: ['project'],
-        ...(fs.existsSync(mcpServerPath) ? {
-          mcpServers: {
-            nanoclaw: {
-              command: 'node',
-              args: [mcpServerPath],
-              env: {
-                NANOCLAW_CHAT_JID: input.chatJid,
-                NANOCLAW_GROUP_FOLDER: input.groupFolder,
-                NANOCLAW_IS_MAIN: input.isMain ? '1' : '0',
+        ...(fs.existsSync(mcpServerPath)
+          ? {
+              mcpServers: {
+                nanoclaw: {
+                  command: 'node',
+                  args: [mcpServerPath],
+                  env: {
+                    NANOCLAW_CHAT_JID: input.chatJid,
+                    NANOCLAW_GROUP_FOLDER: input.groupFolder,
+                    NANOCLAW_IS_MAIN: input.isMain ? '1' : '0',
+                  },
+                },
               },
-            },
-          },
-        } : {}),
+            }
+          : {}),
       },
     })) {
       if (message.type === 'system' && message.subtype === 'init') {
@@ -116,7 +140,8 @@ export async function runDirectAgent(
 
       if (message.type === 'result') {
         resultCount++;
-        const textResult = 'result' in message ? (message as { result?: string }).result : null;
+        const textResult =
+          'result' in message ? (message as { result?: string }).result : null;
 
         logger.debug(
           { group: group.name, resultCount, hasText: !!textResult },

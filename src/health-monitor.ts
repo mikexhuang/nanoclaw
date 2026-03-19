@@ -15,9 +15,7 @@ const RECONNECT_BACKOFF = [30_000, 120_000, 600_000]; // 30s, 2min, 10min
 let previousStatus: 'healthy' | 'down' = 'healthy';
 let healthInterval: ReturnType<typeof setInterval> | null = null;
 
-export async function checkHealth(
-  channels: Channel[],
-): Promise<HealthStatus> {
+export async function checkHealth(channels: Channel[]): Promise<HealthStatus> {
   const waChannel = channels.find((c) => c.name === 'whatsapp');
   const memUsage = process.memoryUsage();
 
@@ -43,9 +41,7 @@ export async function checkHealth(
   };
 }
 
-export async function attemptReconnect(
-  waChannel: Channel,
-): Promise<boolean> {
+export async function attemptReconnect(waChannel: Channel): Promise<boolean> {
   for (let i = 0; i < RECONNECT_BACKOFF.length; i++) {
     const delay = RECONNECT_BACKOFF[i];
     logger.info(

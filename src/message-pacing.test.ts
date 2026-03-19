@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { pacedSend, getRateWarning, _resetRateTracker } from './message-pacing.js';
+import {
+  pacedSend,
+  getRateWarning,
+  _resetRateTracker,
+} from './message-pacing.js';
 import { Channel } from './types.js';
 
 // Mock logger to suppress output during tests
@@ -64,7 +68,10 @@ describe('message-pacing', () => {
     await vi.advanceTimersByTimeAsync(1000);
     await promise;
 
-    expect(channel.sendMessage).toHaveBeenCalledWith('group@g.us', 'test message');
+    expect(channel.sendMessage).toHaveBeenCalledWith(
+      'group@g.us',
+      'test message',
+    );
     vi.spyOn(Math, 'random').mockRestore();
   });
 
